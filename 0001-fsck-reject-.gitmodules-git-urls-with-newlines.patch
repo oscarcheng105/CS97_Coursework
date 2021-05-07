@@ -1,0 +1,61 @@
+From 6aed56736b882f94c81293d1646d27d10241349c Mon Sep 17 00:00:00 2001
+From: Jeff King <peff@peff.net>
+Date: Thu, 7 Jan 2021 04:44:17 -0500
+Subject: [PATCH] fsck: reject .gitmodules git:// urls with newlines
+
+The previous commit taught the clone/fetch client side to reject a
+git:// URL with a newline in it. Let's also catch these when fscking a
+.gitmodules file, which will give an earlier warning.
+
+Note that it would be simpler to just complain about newline in _any_
+URL, but an earlier tightening for http/ftp made sure we kept allowing
+newlines for unknown protocols (and this is covered in the tests). So
+we'll stick to that precedent.
+
+Signed-off-by: Jeff King <peff@peff.net>
+Signed-off-by: Junio C Hamano <gitster@pobox.com>
+---
+ fsck.c                        |  2 +-
+ t/t7416-submodule-dash-url.sh | 15 +++++++++++++++
+ 2 files changed, 16 insertions(+), 1 deletion(-)
+
+diff --git a/fsck.c b/fsck.c
+index c4a9fe624a..a8870a54b6 100644
+--- a/fsck.c
++++ b/fsck.c
+@@ -1086,7 +1086,7 @@ static int check_submodule_url(const char *url)
+ 	if (looks_like_command_line_option(url))
+ 		return -1;
+ 
+-	if (submodule_url_is_relative(url)) {
++	if (submodule_url_is_relative(url) || starts_with(url, "git://")) {
+ 		char *decoded;
+ 		const char *next;
+ 		int has_nl;
+diff --git a/t/t7416-submodule-dash-url.sh b/t/t7416-submodule-dash-url.sh
+index eec96e0ba9..d21dc8b009 100755
+--- a/t/t7416-submodule-dash-url.sh
++++ b/t/t7416-submodule-dash-url.sh
+@@ -201,4 +201,19 @@ test_expect_success 'fsck rejects embedded newline in relative url' '
+ 	grep gitmodulesUrl err
+ '
+ 
++test_expect_success 'fsck rejects embedded newline in git url' '
++	git checkout --orphan git-newline &&
++	cat >.gitmodules <<-\EOF &&
++	[submodule "foo"]
++	url = "git://example.com:1234/repo%0a.git"
++	EOF
++	git add .gitmodules &&
++	git commit -m "git url with newline" &&
++	test_when_finished "rm -rf dst" &&
++	git init --bare dst &&
++	git -C dst config transfer.fsckObjects true &&
++	test_must_fail git push dst HEAD 2>err &&
++	grep gitmodulesUrl err
++'
++
+ test_done
+-- 
+2.23.0
+

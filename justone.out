@@ -1,0 +1,31 @@
+diff --git a/NEWS b/NEWS
+index af5dd9f..f3c94ed 100644
+--- a/NEWS
++++ b/NEWS
+@@ -20,6 +20,13 @@ Unreleased, experimental changes
+     last time transition disagreed with the TZ string, contrary to
+     Internet RFC 8563 section 3.3.
+ 
++    zic now generates a POSIX-conforming TZ string for TZif files
++    where all-year DST is predicted for the indefinite future.
++    For example, for all-year Eastern Daylight Time, zic now generates
++    "XXX3EDT4,0/0,J365/23" where it previously generated
++    "EST5EDT,0/0,J365/25" or "".  (Thanks to Michael Deckers for
++    noting the possibility of POSIX conformance.)
++
+ 
+ Release 2021a - 2021-01-24 10:54:57 -0800
+ 
+diff --git a/zic.c b/zic.c
+index 4893a32..b91cb6c 100644
+--- a/zic.c
++++ b/zic.c
+@@ -2519,7 +2519,7 @@ stringzone(char *result, struct zone const *zpfirst, ptrdiff_t zonecount)
+ 		 Fake a timezone with negative DST.  */
+ 	      stdzp = &zstr[0];
+ 	      dstzp = &zstr[1];
+-	      zstr[0].z_stdoff = zp->z_stdoff - 2 * save;
++	      zstr[0].z_stdoff = zp->z_stdoff + 2 * save;
+ 	      zstr[0].z_format = "XXX";  /* Any 3 letters will do.  */
+ 	      zstr[0].z_format_specifier = 0;
+ 	      zstr[1].z_stdoff = zstr[0].z_stdoff;
