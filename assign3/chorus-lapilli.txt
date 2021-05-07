@@ -1,0 +1,545 @@
+Oscar Cheng
+
+305-375-558
+
+Create new react project using this command
+
+	npx create-react-app chorus-lapilli
+
+delete every file in src
+
+create index.css and index.js file in src
+
+Copy paste the css file of tic-tac-toe turtorial to index.css
+
+Copy paste the js file of tic-tac-toe turtorial to index.js 
+
+	local/3000 now shows an empty tic-tac-toe field
+w
+We use this tic-tac-toe field to create Chorus-lapilli game
+
+First we add constructor with a 3x3 array 
+and xIsNext bool variable in Game:
+
+    constructor(props)
+    {
+        super(props);
+        this.state = {
+            squares: Array(9).fill(null),
+            xIsNext:true,
+        }
+    }
+
+
+next we add a handleClick function that would now only 
+handle the printing of the player's sign to the square and switching turns
+	
+    handleClick(i)
+    {   
+        let squares = this.state.squares.slice();
+        let player = this.state.xIsNext ? "X" : "O";
+        if(squares[i])
+            return
+        squares[i] = player;
+        this.setState({
+            squares: squares,
+            xIsNext:!this.state.xIsNext
+        });
+    }
+	
+
+next we add value and onClick to <Board> in Class Game,
+ <Square> in class Board, and <button> in function Square:
+
+  <Board squares={this.state.squares} onClick={(i) => {this.handleClick(i)}} />
+
+  <Square value={this.props.squares[i]} onClick={() => this.props.onClick(i)}/>;
+	
+  <button className="square" onClick={() => props.onClick()}>
+    {props.value}
+  </button>
+
+next we add a limit to how many pieces a player can play, which is three. 
+This will add to a total of 6 moves, 
+which means after three moves each from each player,
+they will have to start moving the position of the existing pieces on the board.
+
+We add a step counter stepNumber to constructor and 
+add it's value by 1 whenever each player makes a move 
+and add an if else that brings to a new rule after 6 moves
+
+    constructor(props)
+    {
+        super(props);
+        this.state = {
+            squares: Array(9).fill(null),
+            xIsNext:true,
+            stepNumber:0,
+        }
+    }
+
+    handleClick(i)
+    {   
+        let squares = this.state.squares.slice();
+        let player = this.state.xIsNext ? "X" : "O";
+        if(this.state.stepNumber < 6)
+        {
+            if(squares[i])
+                return;
+            squares[i] = player;
+            this.setState({
+                squares: squares,
+                xIsNext:!this.state.xIsNext,
+                stepNumber: this.state.stepNumber+1,
+            });
+        }
+        else
+        {
+        }
+    }
+
+In the else region of handleClick, we set up the game mechanics
+ after the three pieces from both players have been placed
+
+we will add another bool variable in constructor name movePiece, 
+which indicates whether the player is moving an existing piece or not
+
+we will also change up our code a bit to make it more organized. 
+
+we will establish temporary variables for all of our variables, 
+and only changing these temporary variables, 
+then we will setState them all at once at the end of handleClick:
+
+    constructor(props)
+    {
+        super(props);
+        this.state = {
+            squares: Array(9).fill(null),
+            xIsNext:true,
+            stepNumber:0,
+            movePiece: false,
+        }
+    }
+
+    handleClick(i)
+    {   
+        let squares = this.state.squares.slice();
+        let player = this.state.xIsNext ? "X" : "O";
+        let xIsNext = this.state.xIsNext;
+        let stepNumber = this.state.stepNumber;
+        let movePiece = this.state.movePiece;
+        if(this.state.stepNumber < 6)
+        {
+            if(squares[i])
+                return;
+            squares[i] = player;
+            xIsNext = !xIsNext;
+            stepNumber += 1;
+        }
+        else
+        {
+        }
+	this.setState({
+            squares: squares,
+            xIsNext: xIsNext,
+            stepNumber: stepNumber,
+            movePiece: movePiece,
+        });
+    }
+
+we will first add the condition where if the player has its piece in the middle,
+ it must move the middle piece. After moving the piece,
+ it will then need to choose an empty square to place its piece,
+ where the condition will look like this:
+
+            if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+            }
+            else if(this.state.movePiece && squares[i] === null)
+            {
+                squares[i] = player;
+                xIsNext = !xIsNext;
+                stepNumber += 1;
+                movePiece = !movePiece;
+            }   
+
+Now that condition was only for pieces that is in the middle square,
+ we'll now implement another condition that applies to pieces in other squares:
+
+	    if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+            }
+            else if(squares[i] === player && !this.state.movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+            }
+            else if(this.state.movePiece && squares[i] === null)
+            {
+                squares[i] = player;
+                xIsNext = !xIsNext;
+                stepNumber += 1;
+                movePiece = !movePiece;
+            }   
+
+Now that we can move our pieces freely, 
+we can add another condition that will simply 
+return the function when we're doing necessary actions, 
+which is when we aren't clicking on 
+any of our piece and we aren't moving pieces.
+
+            if(squares[i] !== player && !this.state.movePiece)
+                return
+            if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+            }
+            else if(squares[i] === player && !this.state.movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+            }
+            else if(this.state.movePiece && squares[i] === null)
+            {
+                squares[i] = player;
+                xIsNext = !xIsNext;
+                stepNumber += 1;
+                movePiece = !movePiece;
+            }    
+
+Notice that even with these conditions,
+when we click on the same piece twice,
+the piece will simply be placed back to its original place
+and switch to the other player's turn, we'll need to fix this.
+
+To do this, we'll make a variable that records 
+the previous position of our piece when we are moving it. 
+we'll name it prevSqr. 
+prevSqr will be null unless we are currently moving a piece,
+which it will store its previous position:
+
+    constructor(props)
+    {
+        super(props);
+        this.state = {
+            squares: Array(9).fill(null),
+            xIsNext:true,
+            stepNumber:0,
+            movePiece: false,
+            prevSqr: null,
+        }
+    }
+
+we will then need to change the conditions 
+to make sure it address prevSqr properly. 
+We'll store the position of our piece to prevSqr when we pick our piece up,
+and we will change prevSqr back to null when we put our piece down. 
+When we put our piece down, 
+we will also add another condition
+where the the square we put our piece down 
+can't be the same as our previous square:
+
+	    if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+                prevSqr = 4;
+            }
+            else if(squares[i] === player && !movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+                prevSqr = i;
+            }
+            else if(movePiece && squares[i] === null && i !== prevSqr)
+            {
+                squares[i] = player;
+                xIsNext = !xIsNext;
+                stepNumber += 1;
+                movePiece = !movePiece;
+                prevSqr = null
+            }  
+
+we'll then add a few conditions where it simply returns 
+and terminate the function when we are doing necessary actions
+
+Now that the game mechanics are working properly, 
+we then need to check the winning condition.
+
+we'll create a new independent function called calculateWinner, 
+which accepts a 3x3 array param.
+
+The calculateWinner function will contain an array of line positions
+that contains all possible lines in the board, 
+and there will be a for loop that loops through all lines
+while checking if one of the player satisfies any of the lines. 
+The function will then return the player's sign.
+(same as the calculateWinner function of tic-tac-toe)
+
+
+We will then add this check condition to the return 
+and terminate conditions that's in handleClick
+
+The full code of handleClick now looks like this:
+
+handleClick(i)
+    {   
+        let squares = this.state.squares.slice();
+        let player = this.state.xIsNext ? "X" : "O";
+        let xIsNext = this.state.xIsNext;
+        let stepNumber = this.state.stepNumber;
+        let movePiece = this.state.movePiece;
+        let prevSqr = this.state.prevSqr;
+        if(this.state.stepNumber < 6)
+        {
+            if(calculateWinner(squares) || squares[i])
+                return;
+            squares[i] = player;
+            xIsNext = !xIsNext;
+            stepNumber += 1;
+        }
+        else
+        {
+            if( calculateWinner(squares) ||
+                (squares[i] !== player && !movePiece) ||
+                (movePiece && i === prevSqr) ||
+                (movePiece && squares[i] !== null))
+                return
+            if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+                prevSqr = 4;
+            }
+            else if(squares[i] === player && !movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+                prevSqr = i;
+            }
+            else if(movePiece && squares[i] === null && i !== prevSqr)
+            {
+                squares[i] = player;
+                xIsNext = !xIsNext;
+                stepNumber += 1;
+                movePiece = !movePiece;
+                prevSqr = null
+            }         
+        }
+        this.setState({
+            squares: squares,
+            xIsNext: xIsNext,
+            stepNumber: stepNumber,
+            movePiece: movePiece,
+            prevSqr: prevSqr,
+        });
+    }
+
+Now that the game is basically complete, 
+we'll add changes to the UI to show the situation of the game.
+
+we will add a status that shows the situation of the game 
+in render() of Class Game. 
+It will check if there's a winner, 
+if someone wins, it shows whose the winner. 
+Other wise, it shows who's player's turn it is:
+
+    render() {
+        let winner = calculateWinner(this.state.squares)
+        let status;
+        if (winner) 
+            status = 'Winner: ' + winner;
+        else 
+            status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+        return (
+            <div className="game">
+                <div className="game-board">
+                    <Board 
+                    squares = {this.state.squares}
+                    onClick={(i) => {this.handleClick(i)}} />
+                </div>
+                <div className="game-info">
+                    <div className="status">{status}</div>
+                </div>
+            </div>
+	);
+    }
+
+We now basically have the game complete. 
+Now we only need a restart button to restart the game.
+
+We will create a restart button beside the board that just reset everything.
+
+We will create a handleRestart function that set every variable to default:
+
+    handleRestart()
+    {
+        this.setState({
+            squares: Array(9).fill(null),
+            xIsNext: true,
+            stepNumber: 0,
+            movePiece: false,
+            prevSqr: null,
+        });
+    }
+
+We will then add a button to "game-info" div in render() 
+and link its onClick to handleRestart:
+
+        return (
+            <div className="game">
+                <div className="game-board">
+                    <Board 
+                    squares = {this.state.squares}
+                    onClick={(i) => {this.handleClick(i)}} />
+                </div>
+                <div className="game-info">
+                    <div className="status">{status}</div>
+                    <button onClick={()=>{this.handleRestart()}}>
+			Restart
+		   </button>
+                </div>
+            </div>
+        );
+
+*A few mistakes noticed 
+
+We will change the if else condition in handleClick 
+so that it allows the player to pick up its piece 
+and put it back down to its original square 
+without switching to the other player's turn:
+
+            if( calculateWinner(squares) ||
+                (squares[i] !== player && !movePiece) ||
+                (movePiece && squares[i] !== null))
+                return
+            if(squares[4] === player)
+            {
+                squares[4] = null;
+                movePiece = !movePiece;
+                prevSqr = 4;
+            }
+            else if(squares[i] === player && !movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+                prevSqr = i;
+            }
+            else if(movePiece && squares[i] === null)
+            {
+                squares[i] = player;
+                movePiece = !movePiece;
+                if(i !== prevSqr)
+                    xIsNext = !xIsNext;
+                prevSqr = null
+            }
+
+Now we need to change the content of the middle square check condition, 
+where the player either has to win in the next move 
+or move it's center piece out of the way.
+
+We'll delete the original if(squares[4] === player) in handleClick
+
+To address the center square rule, 
+we'll modify the code under the condition 
+when we are moving our piece to another position.
+We will first check if the center square of the board 
+was originally occupied by the player or not, if yes, 
+then we will check that after the player plays its current move, 
+will he win the game or not, 
+if not, then we will not allow the player to place that move. 
+We will also check if the player is simply picking up its piece 
+and putting it back to it's original position, 
+if yes then we'll ignore that move.
+
+After the fix the full code of handleClick then becomes:
+
+    handleClick(i)
+    {   
+        let squares = this.state.squares.slice();
+        let player = this.state.xIsNext ? "X" : "O";
+        let xIsNext = this.state.xIsNext;
+        let stepNumber = this.state.stepNumber;
+        let movePiece = this.state.movePiece;
+        let prevSqr = this.state.prevSqr;
+        if(this.state.stepNumber < 6)
+        {
+            if(calculateWinner(squares) || squares[i])
+                return;
+            squares[i] = player;
+            xIsNext = !xIsNext;
+            stepNumber += 1;
+        }
+        else
+        {
+            if( calculateWinner(squares) ||
+                (squares[i] !== player && !movePiece) ||
+                (movePiece && squares[i] !== null))
+                return
+            else if(squares[i] === player && !movePiece)
+            {
+                squares[i] = null;
+                movePiece = !movePiece;
+                prevSqr = i;
+            }
+            else if(movePiece && squares[i] === null)
+            {
+                let center = squares[4];
+                squares[i] = player;
+                if(center === player &&
+		 !calculateWinner(squares) &&
+		 i !== prevSqr)
+                    squares[i] = null;
+                else
+                {
+                movePiece = !movePiece;
+                if(i !== prevSqr)
+                    xIsNext = !xIsNext;
+                prevSqr = null
+                }
+            }         
+        }
+        this.setState({
+            squares: squares,
+            xIsNext: xIsNext,
+            stepNumber: stepNumber,
+            movePiece: movePiece,
+            prevSqr: prevSqr,
+        });
+
+After fixing this problem, the game is complete.
+	
+We will now use npm pack --dry-run to check its content
+
+Output:
+
+npm notice 
+npm notice ð¦  chorus-lapilli@0.1.0
+npm notice === Tarball Contents === 
+npm notice 310B  .eslintcache        
+npm notice 739B  src/index.css       
+npm notice 1.7kB public/index.html   
+npm notice 3.9kB public/favicon.ico  
+npm notice 4.5kB src/index.js        
+npm notice 492B  public/manifest.json
+npm notice 817B  package.json        
+npm notice 3.4kB README.md           
+npm notice 5.3kB public/logo192.png  
+npm notice 9.7kB public/logo512.png  
+npm notice 67B   public/robots.txt   
+npm notice === Tarball Details === 
+npm notice name:          chorus-lapilli                          
+npm notice version:       0.1.0                                   
+npm notice filename:      chorus-lapilli-0.1.0.tgz                
+npm notice package size:  23.6 kB                                 
+npm notice unpacked size: 30.9 kB                                 
+npm notice shasum:        8a062ed4eef05f51a1886a7885b10fd785cdb219
+npm notice integrity:     sha512-Ada/VrIW+2VEP[...]QIhXjaWuu2cjA==
+npm notice total files:   11                                      
+npm notice 
+chorus-lapilli-0.1.0.tgz

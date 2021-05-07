@@ -1,0 +1,237 @@
+Oscar Cheng
+
+305-375-558
+
+Create new react project using this command
+
+	npx create-react-app tic-tac-toe
+
+delete every file in src
+
+create index.css and index.js file in src
+
+Copy paste the css file to index.css
+
+Copy paste the js file to index.js 
+
+	local/3000 now shows an empty tic-tac-toe field
+
+add props value to square component in class Board
+
+add {this.props.value} to within button in class Square
+
+	tic-tac-toe field now shows numbers
+
+add onClick={() => alert('click')} to button in class Square 
+instead of  onClick={fucntion() {alert('click');}} to avoid rerender 
+unless the function is called after a click.
+
+initialize state by adding constructor
+
+	constructor(props) {
+    		super(props);
+    		this.state = {
+      			value: null,
+   		};
+  	}
+
+*be reminded to always add super(props) in constructor
+
+replace this.props.value with this.state.value in <button>
+
+replace onClick={...} with 
+event handler onClick={() => this.setState({value: 'X'})}
+
+	square re-render an shows X after clicked
+
+lifting state into a parent component
+
+add constructor to Board
+
+	constructor(props) {
+    		super(props);
+    		this.state = {
+      		squares: Array(9).fill(null),
+    		};
+  	}
+
+add value={this.state.squares[i]} to Square component in Board
+
+add props onClick={()=>this.handleClick(i)} in Square component in Board
+
+delete constructor in class Square
+
+Change this.state.value in square back to this.props.value
+
+add onClick to button with 
+this.props.onClick() <onClick={() => this.props.onClick()}>
+
+add handleClick(i)
+
+	handleClick(i) {
+    		const squares = this.state.squares.slice();
+    		squares[i] = 'X';
+    		this.setState({squares: squares});
+  	}
+
+	The code now functions the same but is in a higher state
+
+change Square to be function component
+
+make Square take props
+
+all class Square to 
+
+	function Square(props){
+		...
+	}
+
+change all this.props to props
+
+Take Turns
+
+add xIsNext in state of Class Board
+
+Update handleClick function to flip the value of xIsNext
+
+	handleClick(i) {
+    		const squares = this.state.squares.slice();
+    		squares[i] = this.state.xIsNext ? 'X' : 'O';
+    		this.setState({
+      			squares: squares,
+      			xIsNext: !this.state.xIsNext,
+   		});
+  	}
+
+change status text in Board's render
+
+	const status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+
+declare winner
+
+copy helper function of calculateWinner
+
+add status helper code in render() of Board
+
+	const winner = calculateWinner(this.state.squares);
+    	let status;
+    	if (winner) {
+      		status = 'Winner: ' + winner;
+    	} else {
+      		status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+    	}
+
+change Board's handleClick function to 
+return early by ignoring click if someone wins
+
+add this after this.state.squares.slice():
+
+	if (calculateWinner(squares) || squares[i]) {
+      		return;
+    	}
+
+add Time Travel
+
+stores past square array in another array called history
+
+setup initial state for the Game component within its constructor
+
+	constructor(props) {
+    		super(props);
+    		this.state = {
+      			history: [{
+        				squares: Array(9).fill(null),
+     			}],
+      			xIsNext: true,
+    		};
+  	}
+
+delete constructor in Board
+
+replace this.state.squares[i] with this.props.squares[i] in Board's renderSquare
+
+replace this.handleCLick(i) with this.props.onClick(i) in Board's renderSquare
+
+update Game's render function to use most recent history entry
+
+    const history = this.state.history;
+    const current = history[history.length - 1];
+    const winner = calculateWinner(current.squares);
+    let status;
+    if (winner) {
+      status = 'Winner: ' + winner;
+    } else {
+      status = 'Next player: ' + (this.state.xIsNext ? 'X' : 'O');
+    }
+
+remove corresponding code from Board's render
+
+move handleClick from Board Component to Game component
+
+modify handleClick to concatenate new history entries onto history
+
+add to handle click:
+
+    const history = this.state.history;
+    const current = history[history.length - 1];
+    const squares = current.squares.slice();
+
+and modify history in this.setState into:
+
+      history: history.concat([{
+        squares: squares,
+      }]),
+
+show Past moves
+
+map over history in Game's render method
+
+    const moves = history.map((step, move) => {
+      const desc = move ?
+        'Go to move #' + move :
+        'Go to game start';
+      return (
+        <li>
+          <button onClick={() => this.jumpTo(move)}>{desc}</button>
+        </li>
+      );
+    });
+
+Picking a key
+
+implement a key to identify unique objects
+
+Implement Time Travel
+
+add key to <li> in moves:
+
+        <li key={move}>
+
+add stepNumber:0 to initial state in Game's constructor
+
+add jumpTo method to update stepNumber:
+
+  jumpTo(step) {
+    this.setState({
+      stepNumber: step,
+      xIsNext: (step % 2) === 0,
+    });
+  }
+
+edit this.state.history to ensure that if we undo, 
+we then make new moves from that point 
+and abandon previous future history:
+
+    const history = this.state.history.slice(0, this.state.stepNumber + 1);
+
+edit stepNumber to ensure we ensure we don't get stuck 
+showing the same move after a new one has been made.
+
+	stepNumber: history.length,
+
+modify render method from rendering the last move to 
+rendering the current selected move according to stepNumber:
+
+    const current = history[this.state.stepNumber];
+
+Wrap up
