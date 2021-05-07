@@ -1,0 +1,16 @@
+a=$(./randall 60 | wc -c); if [ $a -eq 60 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall 60 -o stdio | wc -c); if [ $a -eq 60 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall 60 -o 10 | wc -c); if [ $a -eq 60 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall 60 -o 8 | wc -c); if [ $a -eq 60 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i rdrand 50 | wc -c); if [ $a -eq 50 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i rdrand 50 -o stdio| wc -c); if [ $a -eq 50 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i rdrand 50 -o 10| wc -c); if [ $a -eq 50 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i rdrand 50 -o 3| wc -c); if [ $a -eq 50 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i input 30 | wc -c); if [ $a -eq 30 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i input 30 -o stdio | wc -c); if [ $a -eq 30 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i input 30 -o 3 | wc -c); if [ $a -eq 30 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i input 30 -o 9 | wc -c); if [ $a -eq 30 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i mrand48_r 100 | wc -c); if [ $a -eq 100 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i mrand48_r 100 -o stdio| wc -c); if [ $a -eq 100 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i mrand48_r 100 -o 4| wc -c); if [ $a -eq 100 ]; then echo "success"; else echo "fail"; fi
+a=$(./randall -i mrand48_r 100 -o 6| wc -c); if [ $a -eq 100 ]; then echo "success"; else echo "fail"; fi

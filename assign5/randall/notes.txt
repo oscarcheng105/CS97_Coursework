@@ -1,0 +1,486 @@
+We first download the txz and decompress it.
+
+After reading the files in randall, we will try to create a test file.
+
+We add a "check" line in Makefile so that it runs our test script:
+
+	check: randall test_script.sh
+		./test_script.sh
+
+We then create a test_script.sh shell script to include our test:
+
+	a=$(./randall 5 | wc -c);
+	if [ $a -eq 5 ];
+	then echo "success";
+	else echo "fail";
+	fi
+
+We will make the test_script executable through:
+
+	chmod +x test_script.sh
+
+We then execute the test_script to see it's out:
+
+	[classuzd@lnxsrv06 ~/Desktop/CS97/randall]$ ./test_script.sh
+	success
+
+Now we "make check" the program:
+
+	[classuzd@lnxsrv06 ~/Desktop/CS97/randall]$ make check
+	./test_script.sh
+	success
+
+Next we will split randall source code into modules.
+
+We create the following files and move specific function from randall.c to each:
+
+	options.c & options.h
+		the part that determines the nBytes to print
+	output.c & output.h
+		writebytes
+	rand64-hw.c * rand64-hw.hw
+		hardware_rand64_init;
+		hardware_rand64;
+		hardware_rand64_fini;
+	rand64-sw.c * rand64-sw.hw
+		FILE *urandstream;
+		software_rand64_init;
+		software_rand64;
+		software_rand64_fini;
+
+*Also move required headers. 
+
+Now we implement the input flags.
+
+We first need to access the args.
+
+We will use getOpt.
+
+We will create a options struct to include all necessary variables:
+
+	struct options {
+		bool valid;
+		long long nbytes;
+		bool iflag;
+		char *option1;
+		bool oflag;
+		char *option2;
+	};
+
+We rename our option.c's option function to parseOptions:
+
+	parseOptions(int argc, char **argv, struct options* opt)
+
+parseOptions will parse all necessary variables.
+
+We will add following code to parseOptions along with it's current code:
+
+	void parseOptions(int argc, char **argv, struct options* opt)
+	{
+	int option;
+	while((option = getopt(argc, argv, "i:o:"))!= -1)
+	{
+		switch(option)
+		{
+		case 'i': opt->iflag = true;
+					opt->option1 = optarg; break;
+		case 'o': opt->oflag = true;
+					opt->option2 = optarg; break;
+		default: exit(1);
+		}
+	}
+
+	char *endptr;
+	errno = 0;
+	opt->nbytes = strtoll (argv[optind], &endptr, 10);
+	if (errno)
+			perror (argv[optind]);
+	else
+		opt->valid = !*endptr && 0 <= opt->nbytes;
+	}
+
+Now we move all cpuid and rdrand_supported functions to option.c and option.h.
+
+We now modify the condition in main() to check input flags.
+
+We check rdrand first.
+
+We check if -i is called, if rdrand is the param, and if rdrand_supported is true:
+
+	if(opt.iflag)
+	{
+		const char* hardware = "rdrand";
+		if(strcmp(opt.option1, hardware) == 0)
+		{
+		if(rdrand_supported())
+		{
+			initialize = hardware_rand64_init;
+			rand64 = hardware_rand64;
+			finalize = hardware_rand64_fini;
+		}
+		else
+		{
+			fprintf(stderr, "Error: rdrand not supported\n");
+		}
+		}
+	}
+
+We then check /F.
+
+We declare global variable in rand64-sw.c and rand64-sw.h.
+
+	//rand64-sw.h
+	extern char* filename;
+
+	//rand64-sw.c
+	char* filename= "/dev/random";
+
+And change software_rand64_init to:
+
+	void software_rand64_init (void)
+	{
+		urandstream = fopen (filename, "r");
+		if (! urandstream)
+			abort ();
+	}
+
+We check if -i is called, then check if a path is given, then rename filename:
+	
+	if(opt.iflag)
+	{
+		const char* hardware = "rdrand";
+		if(strcmp(opt.option1, hardware) == 0)
+		{
+			if(rdrand_supported())
+			{
+				initialize = hardware_rand64_init;
+				rand64 = hardware_rand64;
+				finalize = hardware_rand64_fini;
+			}
+			else
+			{
+				fprintf(stderr, "Error: rdrand not supported\n");
+			}
+		}
+	}
+	else if(opt.option1)
+    {
+		filename = opt.option1;
+		initialize = software_rand64_init;
+		rand64 = software_rand64;
+		finalize = software_rand64_fini;
+    }
+
+We check mrand.
+
+We create mrand_rand64.c and mrand_rand64.h two files.
+
+We add these functions to mrand_rand64.c (and declared in mrand_rand64.h):
+
+	void mrand_rand64_init(void)
+	{}
+
+	unsigned long long mrand_rand64(void)
+	{}
+
+	void mrand_rand64_fini(void)
+	{}
+
+We implement mrand:
+
+	void mrand_rand64_init(void)
+	{}
+
+	unsigned long long mrand_rand64(void)
+	{
+		long int x;
+		struct drand48_data buf = {0};
+		srand48_r(time(NULL), &buf);
+		mrand48_r(&buf, &x);
+		unsigned long long y = x;
+		return y;
+	}
+
+	void mrand_rand64_fini(void)
+	{}
+
+We check condition in main().
+
+We first check if -i is called, then check if mrand is the param.
+
+We add this condition to the overall input flag condition:
+
+if(opt.iflag)
+{
+    const char* hardware = "rdrand";
+    const char* mrand = "mrand";
+    if(strcmp(opt.option1, hardware) == 0)
+    {
+		if(rdrand_supported())
+		{
+			initialize = hardware_rand64_init;
+			rand64 = hardware_rand64;
+			finalize = hardware_rand64_fini;
+		}
+		else
+		{
+			fprintf(stderr, "Error: rdrand not supported\n");
+		}
+    }
+    else if(strcmp(opt.option1, mrand) == 0)
+    {
+      initialize = mrand_rand64_init;
+      rand64 = mrand_rand64;
+      finalize = mrand_rand64_fini;
+    }
+    else if(opt.option1)
+    {
+      filename = opt.option1;
+      initialize = software_rand64_init;
+      rand64 = software_rand64;
+      finalize = software_rand64_fini;
+    }
+    else
+    {
+      fprintf(stderr, "Error: input flag error\n");
+      return 1;
+    }
+}
+
+We also add no input flags conditions:
+
+if(opt.iflag)
+{
+    const char* hardware = "rdrand";
+    const char* mrand = "mrand";
+    if(strcmp(opt.option1, hardware) == 0)
+    {
+		if(rdrand_supported())
+		{
+			initialize = hardware_rand64_init;
+			rand64 = hardware_rand64;
+			finalize = hardware_rand64_fini;
+		}
+		else
+		{
+			fprintf(stderr, "Error: rdrand not supported\n");
+		}
+    }
+    else if(strcmp(opt.option1, mrand) == 0)
+    {
+      initialize = mrand_rand64_init;
+      rand64 = mrand_rand64;
+      finalize = mrand_rand64_fini;
+    }
+    else if(opt.option1)
+    {
+      filename = opt.option1;
+      initialize = software_rand64_init;
+      rand64 = software_rand64;
+      finalize = software_rand64_fini;
+    }
+    else
+    {
+      fprintf(stderr, "Error: input tag error\n");
+      return 1;
+    }
+}
+else if (rdrand_supported ())
+{
+      initialize = hardware_rand64_init;
+      rand64 = hardware_rand64;
+      finalize = hardware_rand64_fini;
+}
+else
+{
+      initialize = software_rand64_init;
+      rand64 = software_rand64;
+      finalize = software_rand64_fini;
+}
+
+Overall Input flags are complete.
+
+We noew address the output.
+
+-o stdio is addressed as default.
+
+We simply add a condition to check output flag and param:
+
+	if((opt.oflag && strcmp(opt.option2, "stdio")) || !opt.oflag)
+
+We will then check N.
+
+We check if -o is called and N is given and is a number:
+
+	if(opt.oflag)
+	{
+		for(int i=0; opt.option2[i]!='\0';i++)
+		{
+			if(isdigit(opt.option2[i]) == 0)
+			{
+				fprintf(stderr, "Error: N flag needs to be digit");
+			}
+		}
+		bytesWritten(rand64,opt.nbytes, atoi(opt.option2));
+	}
+
+We then code bytesWritten in output.c, which pass in the randNum generator,
+the required bytes, and the bufferSize.
+
+We follow the pseudocode:
+
+void bytesWritten(unsigned long long (*r) (void),int required, int bufferSize)
+{
+  int total = 0;
+  int index = 0;
+  char* buf = malloc(bufferSize);
+
+  unsigned long long x = 0;
+  int written = 0;
+  //Generate random numbers and print them
+  while (total<required)
+  {
+    x = r();
+
+    if (total+bufferSize > required)
+      bufferSize = required - total;
+
+    while (x > 0 && index < bufferSize)
+    {
+      buf[index] = x;
+      index += 1;
+      x >>= 8;
+    }
+
+    if(index == bufferSize)
+    {
+      written = write(1,buf,bufferSize);
+      total += written;
+      index = 0;
+    }
+  }
+}
+
+We then unify the condition for output flag in randall.c and get this:
+
+  if((opt.oflag && strcmp(opt.option2, "stdio")) || !opt.oflag)
+  {
+    do
+      {
+        unsigned long long x = rand64 ();
+        int outbytes = opt.nbytes < wordsize ? opt.nbytes : wordsize;
+        if (!writebytes (x, outbytes))
+        {
+          output_errno = errno;
+          break;
+        }
+        opt.nbytes -= outbytes;
+      }
+    while (0 < opt.nbytes);
+  }
+  else if(opt.oflag)
+  {
+    for(int i=0; opt.option2[i]!='\0';i++)
+    {
+      if(isdigit(opt.option2[i]) == 0)
+      {
+        fprintf(stderr, "Error: N flag needs to be digit");
+      }
+    }
+    bytesWritten(rand64,opt.nbytes,atoi(opt.option2));
+  }
+
+The output flag is then complete.
+
+We then adjust Makefile.
+
+Rather then making the file in one line at once, we create multiple object files:
+
+randall: randall.c options.o output.o rand64-hw.o rand64-sw.o mrand_rand64.o
+	$(CC) $(CFLAGS) $@.c options.o output.o rand64-hw.o rand64-sw.o mrand_rand64.o -o$@
+
+options.o: options.c options.h
+	$(CC) $(CFLAGS) -c options.c
+
+output.o: output.c output.h
+	$(CC) $(CFLAGS) -c output.c
+
+rand64-hw.o: rand64-hw.c rand64-hw.h
+	$(CC) $(CFLAGS) -c rand64-hw.c
+
+rand64-sw.o: rand64-sw.c rand64-sw.h
+	$(CC) $(CFLAGS) -c rand64-sw.c
+
+mrand_rand64.o: mrand_rand64.c mrand_rand64.h
+	$(CC) $(CFLAGS) -c mrand_rand64.c
+
+Makefile is then complete.
+
+We then check time.
+
+Initial Results: 
+
+	time ./randall 133562368 >/dev/null
+
+		real	0m3.198s
+		user	0m3.180s
+		sys	0m0.018s
+
+		-> sys < user < real
+
+	time ./randall 133562368 | cat >/dev/null
+
+		real	0m3.365s
+		user	0m3.308s
+		sys	0m0.218s
+
+		-> sys < user < real
+
+	time ./randall 133562368 >rand.data
+
+		real	0m5.381s
+		user	0m3.156s
+		sys	0m0.154s
+
+		-> sys < user < real
+
+With '-i /dev/urandom':
+
+	$time ./randall -i /dev/urandom 133562368 >/dev/null
+
+		real	0m2.582s
+		user	0m1.699s
+		sys	0m0.883s
+
+		-> sys < user < real
+
+	$time ./randall -i /dev/urandom 133562368 | cat >/dev/null
+
+		real	0m2.779s
+		user	0m2.235s
+		sys	0m0.706s
+
+		-> sys < user < real
+
+	$time ./randall -i /dev/urandom 133562368 >rand.data
+
+		real	0m5.161s
+		user	0m1.736s
+		sys	0m1.006s
+
+		-> sys < user < real
+
+In general, sys < user < real. 
+
+With '-i /dev/urandom', however, the result becomes significantly faster than without it.
+
+
+
+
+
+
+
+
+
+
+

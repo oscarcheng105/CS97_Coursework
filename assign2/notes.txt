@@ -1,0 +1,49 @@
+Laboratory: Lisp scripting
+305-375-558
+
+2.1
+(if (< (expt 2 (expt 3 4)) (expt 2 63))
+    t
+  nil)
+nil
+
+M-: Eval: (expo 2 (expo 3 4))
+2417851639229258349412352 (#o1000000000000000000000000000, #x200000000000000000\
+000)
+
+
+C-h k  generates a description of certain key, click, or menu item you entered.
+C-h k C-h k describes what C-h k does
+
+M-SPC deletes all spaces and tabs around a point and leave one space (or N spaces)
+C-h k M-SPC describes what M-SPC does
+
+Hello            Stranger
+-> M-SPC or M-x just-one-space
+Hello Stranger
+
+
+
+2.2
+M-x what-line 
+	returns the line number you are at in the buffer
+
+
+
+2.3
+randline.py
+	invoke on an empty file like /dev/null
+	returns nothing
+
+	python3 instead of python2
+	Python3 doesn't read the file due to backward compatibility problems
+
+shuf.py
+	python2 instead of python3
+	Backward Compatibility problems
+	SyntaxError: Non-ASCII character '\xe2' in file shuf.py on line 51, but no encoding declared; see http://python.org/dev/peps/pep-0263/ for details
+	
+
+
+
+

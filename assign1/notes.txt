@@ -1,0 +1,71 @@
+Oscar Cheng
+305375558
+
+1.1
+8) Using Hotkeys
+9) No, I used mostly hotkeys
+
+1.4
+8) 6 instances, if adding the one in the HTML comment, then 7 instances
+
+1.5
+1) using "which" I get
+"/usr/local/cs/bin/mv" and "/usr/bin/sh"
+
+2) using "ls /usr/bin | grep "^.r$"" I get
+ar - create, modify, and extract from archives
+pr - convert text files for printing
+tr - translate or delete characters
+
+3) using "ls -l /usr/bin/emacs" I get
+lrwxrwxrwx 1 root root 23 Jul 15  2020 /usr/bin/emacs -> /etc/alternatives/emacs
+/etc/alternatives/emacs is actually executed.
+
+4)
+using "/usr/bin/gcc -v" I get
+gcc version 4.8.5 20150623 (Red Hat 4.8.5-39) (GCC) 
+
+using "gcc -v" I get
+gcc version 10.2.0 (GCC) 
+
+Through "which gcc", gcc is pointed to /usr/local/cs/bin/gcc.
+
+5) using "man chmod" I get
+u+sx means that the owner can now set user or group ID on execution and execute (or search for directories).
+
+o-w means other users not in the file's group cannot write.
+
+6) using "find /usr/loca/cs -type d -mtime -28" I get
+/usr/local/cs/bin
+
+7) using "find -L /usr/bin -xtype l | wc -l" I get
+280
+
+8) using "ls -lt /usr/lib64" I get
+-rwxr-xr-x.  1 root root       19408 Dec 28  2013 librom1394.so.0.3.0
+the oldest file is librom1394.so.0.3.0
+
+9) using "man locale" and search for PATH in the manual I get
+$ LOCPATH=$HOME/.locale LC_ALL=fi_SE.UTF-8 date
+locale command get its data from HOME/.locale LC_ALL=fi_SE.UTF-8 date
+
+10) using "C-h a" and entering "downcase" I get
+downcase-dwim
+downcase-region
+downcast-word
+
+11) using "C-h k" I get
+C-M-r does search backwards
+C-M-v scrolls other window
+
+12) using "C-h k" I get
+C-g runs the command keyboard-quit, which signals a quit condition
+
+13) using "C-h f" I get
+yank reinserts the most recent kill, it's hotkey is C-y
+
+14) using the emacs manual and "C-s" to search for Dired I get
+C-x d to invoke Dired
+Dired shows the hidden "." and ".." directories
+
+
